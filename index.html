@@ -1,8 +1,11 @@
-const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag';
+// 1. Paste your key inside the quotes below
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag'; 
 
 async function send(status) {
-    const nameValue = document.getElementById('driver').value || "Raj";
+    const nameInput = document.getElementById('driver') || document.getElementById('user');
+    const nameValue = nameInput ? nameInput.value : "Raj";
     const msg = document.getElementById('msg');
+    
     msg.innerText = '⏳ Sending...';
 
     try {
@@ -14,17 +17,22 @@ async function send(status) {
                 'Content-Type': 'application/json',
                 'Prefer': 'return=minimal'
             },
-            body: JSON.stringify({ name: nameValue, status_message: status })
+            body: JSON.stringify({ 
+                name: nameValue, 
+                status_message: status 
+            })
         });
 
-        if (res.ok) {
-            msg.innerText = '✅ Success!';
-            msg.style.color = 'green';
-        } else {
-            const err = await res.text();
-            msg.innerText = '❌ Error: ' + err;
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText);
         }
+
+        msg.innerText = '✅ ' + status + ' Logged!';
+        msg.style.color = 'green';
     } catch(e) { 
-        msg.innerText = '❌ Connection Failed'; 
+        console.error('Insert failed:', e);
+        msg.innerText = '❌ Error: ' + e.message;
+        msg.style.color = 'red';
     }
 }
