@@ -1,43 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head><title>Vantage App</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
-<body style="text-align:center; padding:30px; font-family:sans-serif; background:#f4f4f4;">
-    <h2>Vantage Driver Log</h2>
-    <input type="text" id="user" placeholder="Enter Name" style="padding:15px; width:80%; margin-bottom:20px; border-radius:8px; border:1px solid #ccc;">
-    <button onclick="send('Start Shift')" style="background:#28a745; color:white; padding:20px; width:90%; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">START SHIFT</button>
-    <button onclick="send('End Shift')" style="background:#dc3545; color:white; padding:20px; width:90%; border:none; border-radius:8px; font-weight:bold;">END SHIFT</button>
-    <p id="msg" style="font-weight:bold; margin-top:20px;"></p>
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag';
 
-    <script>
-        async function send(status) {
-            const name = document.getElementById('user').value || 'Rajesh';
-            const msg = document.getElementById('msg');
-            msg.innerText = '⏳ Sending...';
-            msg.style.color = 'black';
+async function send(status) {
+    const nameValue = document.getElementById('driver').value || "Raj";
+    const msg = document.getElementById('msg');
+    msg.innerText = '⏳ Sending...';
 
-            try {
-                const res = await fetch('https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs', {
-                    method: 'POST',
-                    headers: { 
-                        'apikey': 'sb_publishable_XHY4j2vx-A3TMQc5rEUlkQ_nVjGC3Yv',
-                        'Authorization': 'Bearer sb_publishable_XHY4j2vx-A3TMQc5rEUlkQ_nVjGC3Yv',
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    },
-                    // "name" and "status_message" must match the database exactly
-                    body: JSON.stringify({ name: name, status_message: status })
-                });
-                
-                if(res.ok) {
-                    msg.innerText = '✅ Logged Successfully!';
-                    msg.style.color = 'green';
-                } else {
-                    msg.innerText = '❌ Database Error';
-                }
-            } catch(e) { 
-                msg.innerText = '❌ Connection Error'; 
-            }
+    try {
+        const res = await fetch('https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs', {
+            method: 'POST',
+            headers: { 
+                'apikey': KEY,
+                'Authorization': `Bearer ${KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({ name: nameValue, status_message: status })
+        });
+
+        if (res.ok) {
+            msg.innerText = '✅ Success!';
+            msg.style.color = 'green';
+        } else {
+            const err = await res.text();
+            msg.innerText = '❌ Error: ' + err;
         }
-    </script>
-</body>
-</html>
+    } catch(e) { 
+        msg.innerText = '❌ Connection Failed'; 
+    }
+}
