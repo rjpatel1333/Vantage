@@ -4,18 +4,29 @@ const URL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs?select
 async function getData() {
     try {
         const res = await fetch(URL, { 
-            headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` } 
+            headers: { 
+                'apikey': KEY, 
+                'Authorization': 'Bearer ' + KEY 
+            } 
         });
         const data = await res.json();
         let html = '';
         data.forEach(row => {
             html += `<tr>
-                <td>${new Date(row.created_at).toLocaleTimeString()}</td>
-                <td>${row.name || 'Anonymous'}</td>
+                <td>${new Date(row.created_at).toLocaleString()}</td>
+                <td>${row.user_name || 'Anonymous'}</td>
                 <td>${row.status_message || '-'}</td>
+                <td>${row.latitude ? row.latitude.toFixed(4) : 'No GPS'}</td>
+                <td>${row.longitude ? row.longitude.toFixed(4) : 'No GPS'}</td>
             </tr>`;
         });
         document.getElementById('list').innerHTML = html;
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e); 
+        document.getElementById('list').innerHTML = '<tr><td colspan="5">Failed to load data</td></tr>';
+    }
 }
+
+// Auto refresh every 30 seconds so admin sees new logs without manual refresh
 getData();
+setInterval(getData, 30000);
