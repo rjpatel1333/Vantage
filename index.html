@@ -8,7 +8,7 @@
         button { width: 80%; max-width: 300px; padding: 25px; margin: 10px; font-size: 1.3rem; font-weight: bold; color: white; border: none; border-radius: 15px; cursor: pointer; }
         .btn-start { background: #28a745; }
         .btn-end { background: #007bff; }
-        #status { margin-top: 20px; font-size: 0.9rem; text-align: center; color: #aaa; }
+        #status { margin-top: 20px; font-size: 0.9rem; text-align: center; color: #aaa; padding: 0 20px; }
     </style>
 </head>
 <body>
@@ -25,6 +25,7 @@
 
         function getLocation(msg) {
             var statusDiv = document.getElementById('status');
+            statusDiv.style.color = '#aaa';
             statusDiv.innerText = '📍 Getting GPS Location...';
 
             if (navigator.geolocation) {
@@ -43,14 +44,26 @@
 
         function sendData(msg, lat, lon) {
             var statusDiv = document.getElementById('status');
-            statusDiv.innerText = '⏳ Sending...';
+            statusDiv.innerText = '📍 Getting address...';
 
-            var body = {
-                user_name: 'Vantage Driver',
-                status_message: msg,
-                latitude: lat,
-                longitude: lon
-            };
+            if (lat && lon) {
+                fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon)
+                .then(function(r) { return r.json(); })
+                .then(function(geo) {
+                    var address = geo.display_name || null;
+                    submitLog(msg, lat, lon, address);
+                })
+                .catch(function() {
+                    submitLog(msg, lat, lon, null);
+                });
+            } else {
+                submitLog(msg, null, null, null);
+            }
+        }
+
+        function submitLog(msg, lat, lon, address) {
+            var statusDiv = document.getElementById('status');
+            statusDiv.innerText = '⏳ Sending...';
 
             fetch(APIURL, {
                 method: 'POST',
@@ -60,7 +73,13 @@
                     'Content-Type': 'application/json',
                     'Prefer': 'return=minimal'
                 },
-                body: JSON.stringify(body)
+                body: JSON.stringify({
+                    user_name: 'Vantage Driver',
+                    status_message: msg,
+                    latitude: lat,
+                    longitude: lon,
+                    street_address: address
+                })
             })
             .then(function(res) {
                 if (res.ok) {
