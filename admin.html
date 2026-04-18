@@ -1,32 +1,101 @@
-const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag';
-const URL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs?select=*&order=created_at.desc';
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vantage Logistics — Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; margin: 0; }
+        h2 { color: #007bff; text-align: center; }
+        .subtitle { text-align: center; color: #aaa; font-size: 0.85rem; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { background: #007bff; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #333; }
+        tr:hover { background: #2a2a2a; }
+        #refresh-status { text-align: center; color: #aaa; font-size: 0.8rem; margin-top: 15px; }
+        .gps-link { color: #28a745; text-decoration: none; }
+        .no-gps { color: #666; }
+    </style>
+</head>
+<body>
 
-async function getData() {
-    try {
-        const res = await fetch(URL, { 
-            headers: { 
-                'apikey': KEY, 
-                'Authorization': 'Bearer ' + KEY 
-            } 
-        });
-        const data = await res.json();
-        let html = '';
-        data.forEach(row => {
-            html += `<tr>
-                <td>${new Date(row.created_at).toLocaleString()}</td>
-                <td>${row.user_name || 'Anonymous'}</td>
-                <td>${row.status_message || '-'}</td>
-                <td>${row.latitude ? row.latitude.toFixed(4) : 'No GPS'}</td>
-                <td>${row.longitude ? row.longitude.toFixed(4) : 'No GPS'}</td>
-            </tr>`;
-        });
-        document.getElementById('list').innerHTML = html;
-    } catch (e) { 
-        console.error(e); 
-        document.getElementById('list').innerHTML = '<tr><td colspan="5">Failed to load data</td></tr>';
-    }
-}
+    <h2>Vantage Logistics — Admin Dashboard</h2>
+    <p class="subtitle">Live driver logs — auto refreshes every 30 seconds</p>
 
-// Auto refresh every 30 seconds so admin sees new logs without manual refresh
-getData();
-setInterval(getData, 30000);
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Driver</th>
+                <th>Status</th>
+                <th>Location</th>
+            </tr>
+        </thead>
+        <tbody id="list">
+            <tr><td colspan="4" style="color:#aaa;">Loading...</td></tr>
+        </tbody>
+    </table>
+
+    <div id="refresh-status">Loading...</div>
+
+    <script>
+        const KEY = 'PASTE_FULL_KEY_HERE';
+        const SUPABASE_URL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs?select=*&order=created_at.desc';
+
+        async function getData() {
+            try {
+                const res = await fetch(SUPABASE_URL, {
+                    headers: {
+                        'apikey': KEY,
+                        'Authorization': 'Bearer ' + KEY
+                    }
+                });
+
+                if (!res.ok) {
+                    const err = await res.text();
+                    throw new Error(err);
+                }
+
+                const data = await res.json();
+                let html = '';
+
+                if (data.length === 0) {
+                    html = '<tr><td colspan="4" style="color:#aaa;">No logs yet</td></tr>';
+                } else {
+                    data.forEach(row => {
+                        const time = new Date(row.created_at).toLocaleString();
+                        const driver = row.user_name || 'Anonymous';
+                        const status = row.status_message || '-';
+
+                        let location = '<span class="no-gps">No GPS</span>';
+                        if (row.latitude && row.longitude) {
+                            const mapsUrl = 'https://www.google.com/maps?q=' + row.latitude + ',' + row.longitude;
+                            location = '<a class="gps-link" href="' + mapsUrl + '" target="_blank">📍 ' + parseFloat(row.latitude).toFixed(4) + ', ' + parseFloat(row.longitude).toFixed(4) + '</a>';
+                        } else if (row.street_address) {
+                            location = '📍 ' + row.street_address;
+                        }
+
+                        html += '<tr>' +
+                            '<td>' + time + '</td>' +
+                            '<td>' + driver + '</td>' +
+                            '<td>' + status + '</td>' +
+                            '<td>' + location + '</td>' +
+                        '</tr>';
+                    });
+                }
+
+                document.getElementById('list').innerHTML = html;
+                document.getElementById('refresh-status').innerText = 'Last updated: ' + new Date().toLocaleTimeString() + ' — ' + data.length + ' logs total';
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('list').innerHTML = '<tr><td colspan="4" style="color:red;">❌ Error: ' + e.message + '</td></tr>';
+                document.getElementById('refresh-status').innerText = 'Failed to load';
+            }
+        }
+
+        getData();
+        setInterval(getData, 30000);
+    </script>
+
+</body>
+</html>
