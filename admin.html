@@ -1,51 +1,29 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Vantage Admin</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background: #007bff; color: white; }
-        tr:nth-child(even) { background: #f9f9f9; }
-    </style>
-</head>
-<body>
-    <h2>Vantage Logistics - Operations Log</h2>
-    <button onclick="location.reload()">🔄 Refresh Logs</button>
-    <p>Last 50 activities:</p>
-    <table id="logTable">
-        <thead>
-            <tr>
-                <th>Time</th>
-                <th>Driver</th>
-                <th>Status</th>
-                <th>Address</th>
-            </tr>
-        </thead>
-        <tbody id="logBody"></tbody>
-    </table>
+<script>
+    const SUPABASE_URL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_XHY4j2vx-A3TMQc5rEUlkQ_nVjGC3Yv';
 
-    <script>
-        // Note: This fetches the data you've been saving
-        async function loadLogs() {
-            const res = await fetch('https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/logs?select=*&order=created_at.desc&limit=50', {
-                headers: { 
-                    'apikey': 'YOUR_SUPABASE_ANON_KEY',
-                    'Authorization': 'Bearer YOUR_SUPABASE_ANON_KEY'
-                }
-            });
-            const data = await res.json();
-            const body = document.getElementById('logBody');
-            data.forEach(log => {
-                const row = `<tr>
-                    <td>${new Date(log.created_at).toLocaleString()}</td>
-                    <td>${log.name}</td>
-                    <td>${log.status_message}</td>
-                    <td>${log.address || 'N/A'}</td>
-                </tr>`;
-                body.innerHTML += row;
-            });
+    async function loadLogs() {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/logs?select=*&order=created_at.desc&limit=50`, {
+            headers: { 
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        const data = await res.json();
+        const body = document.getElementById('logBody');
+        body.innerHTML = ''; 
+        data.forEach(log => {
+            const row = `<tr>
+                <td>${new Date(log.created_at).toLocaleString()}</td>
+                <td>${log.name}</td>
+                <td>${log.status_message}</td>
+                <td>${log.address || 'N/A'}</td>
+            </tr>`;
+            body.innerHTML += row;
+        });
+    }
+    loadLogs();
+</script>
         }
         loadLogs();
     </script>
