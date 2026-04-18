@@ -1,38 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vantage Admin Dashboard</title>
+    <title>Vantage Dashboard</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 20px; color: #1c1e21; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #007bff; }
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 900px; margin: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background: #f8f9fa; font-weight: bold; }
-        tr:nth-child(even) { background: #fafafa; }
-        .refresh-btn { display: block; width: 200px; margin: 0 auto 20px; padding: 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .refresh-btn:hover { background: #218838; }
+        th, td { padding: 12px; border: 1px solid #eee; text-align: left; }
+        th { background: #007bff; color: white; }
+        .btn { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div class="container">
+    <div class="card">
         <h1>Vantage Ops Dashboard</h1>
-        <button class="refresh-btn" onclick="loadLogs()">🔄 REFRESH DATA</button>
-        
+        <button class="btn" onclick="loadLogs()">🔄 Refresh Data</button>
         <table>
             <thead>
                 <tr>
-                    <th>Time (AEST)</th>
+                    <th>Time</th>
                     <th>Driver</th>
                     <th>Status</th>
                     <th>Location</th>
                 </tr>
             </thead>
             <tbody id="logBody">
-                <tr><td colspan="4" style="text-align:center;">Connecting to Supabase...</td></tr>
+                <tr><td colspan="4">Loading...</td></tr>
             </tbody>
         </table>
     </div>
@@ -44,43 +37,28 @@
         async function loadLogs() {
             const body = document.getElementById('logBody');
             try {
-                // The timestamp at the end forces the browser to get NEW data
-                const url = `${SUPABASE_URL}/rest/v1/global_logs?select=*&order=created_at.desc&limit=50&t=${Date.now()}`;
-                
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
+                // Correct table name is global_logs
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/global_logs?select=*&order=created_at.desc&limit=50`, {
+                    headers: { 
                         'apikey': SUPABASE_KEY,
                         'Authorization': `Bearer ${SUPABASE_KEY}`
                     }
                 });
-
-                const data = await response.json();
-                body.innerHTML = '';
-
-                if (!data || data.length === 0) {
-                    body.innerHTML = '<tr><td colspan="4" style="text-align:center;">No logs found yet.</td></tr>';
-                    return;
-                }
+                const data = await res.json();
+                body.innerHTML = ''; 
 
                 data.forEach(log => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
+                    body.innerHTML += `<tr>
                         <td>${new Date(log.created_at).toLocaleString()}</td>
-                        <td><strong>${log.name || 'Unknown'}</strong></td>
+                        <td>${log.name || 'Unknown'}</td>
                         <td>${log.status_message || '-'}</td>
-                        <td><small>${log.address || 'GPS searching...'}</small></td>
-                    `;
-                    body.innerHTML += row.outerHTML;
+                        <td>${log.address || 'N/A'}</td>
+                    </tr>`;
                 });
-
-            } catch (err) {
-                console.error(err);
-                body.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Error loading logs. Check connection.</td></tr>';
+            } catch (e) {
+                body.innerHTML = '<tr><td colspan="4" style="color:red">Connection Error</td></tr>';
             }
         }
-
-        // Run once when page loads
         loadLogs();
     </script>
 </body>
