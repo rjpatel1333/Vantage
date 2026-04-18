@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #1a1a1a; color: white; }
+        input { width: 76%; max-width: 280px; padding: 15px; margin: 10px; font-size: 1rem; border-radius: 10px; border: 2px solid #007bff; background: #2a2a2a; color: white; text-align: center; }
+        input::placeholder { color: #888; }
         button { width: 80%; max-width: 300px; padding: 25px; margin: 10px; font-size: 1.3rem; font-weight: bold; color: white; border: none; border-radius: 15px; cursor: pointer; }
         .btn-start { background: #28a745; }
         .btn-end { background: #007bff; }
@@ -13,58 +15,50 @@
 </head>
 <body>
     <h2 style="color: #007bff;">Vantage Logistics</h2>
-
+    <input type="text" id="driver_name" placeholder="Enter your name" />
     <button class="btn-start" onclick="getLocation('Shift Started')">Start Shift</button>
     <button class="btn-end" onclick="getLocation('Delivery Completed')">Delivery Done</button>
-
-    <div id="status">Waiting for location...</div>
-
+    <div id="status">Enter your name and press a button</div>
     <script>
         var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag';
         var APIURL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs';
 
         function getLocation(msg) {
             var statusDiv = document.getElementById('status');
+            var nameInput = document.getElementById('driver_name').value.trim();
+            if (!nameInput) {
+                statusDiv.innerText = '⚠️ Please enter your name first';
+                statusDiv.style.color = 'orange';
+                return;
+            }
             statusDiv.style.color = '#aaa';
             statusDiv.innerText = '📍 Getting GPS Location...';
-
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        sendData(msg, position.coords.latitude, position.coords.longitude);
-                    },
-                    function() {
-                        sendData(msg, null, null);
-                    }
+                    function(position) { sendData(msg, nameInput, position.coords.latitude, position.coords.longitude); },
+                    function() { sendData(msg, nameInput, null, null); }
                 );
             } else {
-                sendData(msg, null, null);
+                sendData(msg, nameInput, null, null);
             }
         }
 
-        function sendData(msg, lat, lon) {
+        function sendData(msg, name, lat, lon) {
             var statusDiv = document.getElementById('status');
             statusDiv.innerText = '📍 Getting address...';
-
             if (lat && lon) {
                 fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon)
                 .then(function(r) { return r.json(); })
-                .then(function(geo) {
-                    var address = geo.display_name || null;
-                    submitLog(msg, lat, lon, address);
-                })
-                .catch(function() {
-                    submitLog(msg, lat, lon, null);
-                });
+                .then(function(geo) { submitLog(msg, name, lat, lon, geo.display_name || null); })
+                .catch(function() { submitLog(msg, name, lat, lon, null); });
             } else {
-                submitLog(msg, null, null, null);
+                submitLog(msg, name, null, null, null);
             }
         }
 
-        function submitLog(msg, lat, lon, address) {
+        function submitLog(msg, name, lat, lon, address) {
             var statusDiv = document.getElementById('status');
             statusDiv.innerText = '⏳ Sending...';
-
             fetch(APIURL, {
                 method: 'POST',
                 headers: {
@@ -74,7 +68,7 @@
                     'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify({
-                    user_name: 'Vantage Driver',
+                    user_name: name,
                     status_message: msg,
                     latitude: lat,
                     longitude: lon,
@@ -83,7 +77,7 @@
             })
             .then(function(res) {
                 if (res.ok) {
-                    statusDiv.innerHTML = '✅ ' + msg + ' Logged!';
+                    statusDiv.innerHTML = '✅ ' + msg + ' Logged for ' + name + '!';
                     statusDiv.style.color = 'lightgreen';
                 } else {
                     return res.text().then(function(err) {
