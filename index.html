@@ -20,59 +20,63 @@
     <div id="status">Waiting for location...</div>
 
     <script>
-        const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag';
-        const URL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs';
+        var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag';
+        var APIURL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs';
 
         function getLocation(msg) {
-            const statusDiv = document.getElementById('status');
-            statusDiv.innerText = "📍 Getting GPS Location...";
+            var statusDiv = document.getElementById('status');
+            statusDiv.innerText = '📍 Getting GPS Location...';
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (position) => sendData(msg, position.coords.latitude, position.coords.longitude),
-                    () => sendData(msg, null, null)
+                    function(position) {
+                        sendData(msg, position.coords.latitude, position.coords.longitude);
+                    },
+                    function() {
+                        sendData(msg, null, null);
+                    }
                 );
             } else {
                 sendData(msg, null, null);
             }
         }
 
-        async function sendData(msg, lat, lon) {
-            const statusDiv = document.getElementById('status');
-            statusDiv.innerText = "⏳ Sending...";
+        function sendData(msg, lat, lon) {
+            var statusDiv = document.getElementById('status');
+            statusDiv.innerText = '⏳ Sending...';
 
-            const locationNote = lat ? ' | lat: ' + lat + ' lon: ' + lon : ' | No GPS';
+            var body = {
+                user_name: 'Vantage Driver',
+                status_message: msg,
+                latitude: lat,
+                longitude: lon
+            };
 
-            try {
-                const res = await fetch(URL, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': KEY,
-                        'Authorization': 'Bearer ' + KEY,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify({
-    user_name: 'Vantage Driver',
-    status_message: msg,
-    latitude: lat,
-    longitude: lon
-})
-                    })
-                });
-
+            fetch(APIURL, {
+                method: 'POST',
+                headers: {
+                    'apikey': KEY,
+                    'Authorization': 'Bearer ' + KEY,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(body)
+            })
+            .then(function(res) {
                 if (res.ok) {
                     statusDiv.innerHTML = '✅ ' + msg + ' Logged!';
                     statusDiv.style.color = 'lightgreen';
                 } else {
-                    const err = await res.text();
-                    statusDiv.innerText = '❌ Error: ' + err;
-                    statusDiv.style.color = 'red';
+                    return res.text().then(function(err) {
+                        statusDiv.innerText = '❌ Error: ' + err;
+                        statusDiv.style.color = 'red';
+                    });
                 }
-            } catch (err) {
+            })
+            .catch(function(err) {
                 statusDiv.innerText = '⚠️ Connection Error: ' + err.message;
                 statusDiv.style.color = 'red';
-            }
+            });
         }
     </script>
 </body>
