@@ -1,37 +1,75 @@
-const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsagE'; 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vantage Logistics GPS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #1a1a1a; color: white; }
+        button { width: 80%; max-width: 300px; padding: 25px; margin: 10px; font-size: 1.3rem; font-weight: bold; color: white; border: none; border-radius: 15px; cursor: pointer; }
+        .btn-start { background: #28a745; }
+        .btn-end { background: #007bff; }
+        #status { margin-top: 20px; font-size: 0.9rem; text-align: center; color: #aaa; }
+    </style>
+</head>
+<body>
+    <h2 style="color: #007bff;">Vantage Logistics</h2>
 
-async function send(status) {
-    const nameInput = document.getElementById('driver') || document.getElementById('user');
-    const nameValue = nameInput ? nameInput.value : "Raj";
-    const msg = document.getElementById('msg');
-    
-    msg.innerText = '⏳ Sending...';
+    <button class="btn-start" onclick="getLocation('Shift Started')">Start Shift</button>
+    <button class="btn-end" onclick="getLocation('Delivery Completed')">Delivery Done</button>
 
-    try {
-        const res = await fetch('https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs', {
-            method: 'POST',
-            headers: { 
-                'apikey': KEY,
-                'Authorization': `Bearer ${KEY}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({ 
-                name: nameValue, 
-                status_message: status 
-            })
-        });
+    <div id="status">Waiting for location...</div>
 
-        if (!res.ok) {
-            const errorText = await res.text();
-            throw new Error(errorText);
+    <script>
+        // ✏️ Paste your anon key here only — do not share this file publicly
+        const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag';
+        const URL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs';
+
+        function getLocation(msg) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = "📍 Getting GPS Location...";
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => sendData(msg, position.coords.latitude, position.coords.longitude),
+                    () => { statusDiv.innerText = "⚠️ GPS Denied. Check your settings."; }
+                );
+            } else {
+                statusDiv.innerText = "⚠️ GPS not supported on this device.";
+            }
         }
 
-        msg.innerText = '✅ ' + status + ' Logged!';
-        msg.style.color = 'green';
-    } catch(e) { 
-        console.error('Insert failed:', e);
-        msg.innerText = '❌ Error: ' + e.message;
-        msg.style.color = 'red';
-    }
-}
+        async function sendData(msg, lat, lon) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = "⏳ Sending...";
+
+            try {
+                const res = await fetch(URL, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': KEY,
+                        'Authorization': 'Bearer ' + KEY,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        name: 'Vantage Driver',
+                        status_message: msg + ' | lat: ' + lat + ' lon: ' + lon
+                    })
+                });
+
+                if (res.ok) {
+                    statusDiv.innerHTML = '✅ ' + msg + ' Logged!';
+                    statusDiv.style.color = 'lightgreen';
+                } else {
+                    const err = await res.text();
+                    statusDiv.innerText = '❌ Error: ' + err;
+                    statusDiv.style.color = 'red';
+                }
+            } catch (err) {
+                statusDiv.innerText = '⚠️ Connection Error: ' + err.message;
+                statusDiv.style.color = 'red';
+            }
+        }
+    </script>
+</body>
+</html>
