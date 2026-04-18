@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html>
-<head><title>Vantage App</title></head>
-<body style="text-align:center; padding:50px; font-family:sans-serif;">
-    <h2>Vantage Driver App</h2>
-    <button onclick="send('Start')" style="background:green; color:white; padding:20px; width:100%; margin-bottom:10px;">START SHIFT</button>
-    <button onclick="send('Stop')" style="background:red; color:white; padding:20px; width:100%;">END SHIFT</button>
-    <p id="msg"></p>
+<head><title>Vantage App</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="text-align:center; padding:30px; font-family:sans-serif; background:#f4f4f4;">
+    <h2>Vantage Driver Log</h2>
+    <input type="text" id="user" placeholder="Enter Name" style="padding:15px; width:80%; margin-bottom:20px; border-radius:8px; border:1px solid #ccc;">
+    <button onclick="send('Start Shift')" style="background:#28a745; color:white; padding:20px; width:90%; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">START SHIFT</button>
+    <button onclick="send('End Shift')" style="background:#dc3545; color:white; padding:20px; width:90%; border:none; border-radius:8px; font-weight:bold;">END SHIFT</button>
+    <p id="msg" style="font-weight:bold; margin-top:20px;"></p>
 
     <script>
         async function send(status) {
-            document.getElementById('msg').innerText = 'Sending...';
+            const name = document.getElementById('user').value || 'Rajesh';
+            const msg = document.getElementById('msg');
+            msg.innerText = '⏳ Sending...';
+            msg.style.color = 'black';
+
             try {
                 const res = await fetch('https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs', {
                     method: 'POST',
@@ -19,10 +24,19 @@
                         'Content-Type': 'application/json',
                         'Prefer': 'return=minimal'
                     },
-                    body: JSON.stringify({ name: 'Raj', status_message: status })
+                    // "name" and "status_message" must match the database exactly
+                    body: JSON.stringify({ name: name, status_message: status })
                 });
-                if(res.ok) document.getElementById('msg').innerText = '✅ Success!';
-            } catch(e) { document.getElementById('msg').innerText = '❌ Failed'; }
+                
+                if(res.ok) {
+                    msg.innerText = '✅ Logged Successfully!';
+                    msg.style.color = 'green';
+                } else {
+                    msg.innerText = '❌ Database Error';
+                }
+            } catch(e) { 
+                msg.innerText = '❌ Connection Error'; 
+            }
         }
     </script>
 </body>
