@@ -17,10 +17,8 @@
     </style>
 </head>
 <body>
-
     <h2>Vantage Logistics — Admin Dashboard</h2>
     <p class="subtitle">Live driver logs — auto refreshes every 30 seconds</p>
-
     <table>
         <thead>
             <tr>
@@ -34,44 +32,40 @@
             <tr><td colspan="4" style="color:#aaa;">Loading...</td></tr>
         </tbody>
     </table>
-
     <div id="refresh-status">Loading...</div>
-
     <script>
-        const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag';
-        const SUPABASE_URL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs?select=*&order=created_at.desc';
+        var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZnpjcmJ1Y21zZGJ2YW5ocXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzE0MDUsImV4cCI6MjA5MjA0NzQwNX0.N1V1jayIDYk30D31xw17FMK-kmFWHqa6MP-bojVBsag';
+        var APIURL = 'https://dpfzcrbucmsdbvanhqyo.supabase.co/rest/v1/global_logs?select=*&order=created_at.desc';
 
-        async function getData() {
-            try {
-                const res = await fetch(SUPABASE_URL, {
-                    headers: {
-                        'apikey': KEY,
-                        'Authorization': 'Bearer ' + KEY
-                    }
-                });
-
-                if (!res.ok) {
-                    const err = await res.text();
-                    throw new Error(err);
+        function getData() {
+            fetch(APIURL, {
+                headers: {
+                    'apikey': KEY,
+                    'Authorization': 'Bearer ' + KEY
                 }
-
-                const data = await res.json();
-                let html = '';
-
-                if (data.length === 0) {
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                var html = '';
+                if (!data || data.length === 0) {
                     html = '<tr><td colspan="4" style="color:#aaa;">No logs yet</td></tr>';
                 } else {
-                    data.forEach(row => {
-                        const time = new Date(row.created_at).toLocaleString();
-                        const driver = row.user_name || 'Anonymous';
-                        const status = row.status_message || '-';
+                    for (var i = 0; i < data.length; i++) {
+                        var row = data[i];
+                        var time = new Date(row.created_at).toLocaleString();
+                        var driver = row.user_name || 'Anonymous';
+                        var status = row.status_message || '-';
+                        var location = '<span class="no-gps">No GPS</span>';
 
-                        let location = '<span class="no-gps">No GPS</span>';
-                        if (row.latitude && row.longitude) {
-                            const mapsUrl = 'https://www.google.com/maps?q=' + row.latitude + ',' + row.longitude;
-                            location = '<a class="gps-link" href="' + mapsUrl + '" target="_blank">📍 ' + parseFloat(row.latitude).toFixed(4) + ', ' + parseFloat(row.longitude).toFixed(4) + '</a>';
-                        } else if (row.street_address) {
-                            location = '📍 ' + row.street_address;
+                        var lat = parseFloat(row.latitude);
+                        var lon = parseFloat(row.longitude);
+
+                        if (row.street_address) {
+                            var mapsUrl = 'https://www.google.com/maps?q=' + lat + ',' + lon;
+                            location = '<a class="gps-link" href="' + mapsUrl + '" target="_blank">📍 ' + row.street_address + '</a>';
+                        } else if (!isNaN(lat) && !isNaN(lon)) {
+                            var mapsUrl = 'https://www.google.com/maps?q=' + lat + ',' + lon;
+                            location = '<a class="gps-link" href="' + mapsUrl + '" target="_blank">📍 ' + lat.toFixed(4) + ', ' + lon.toFixed(4) + '</a>';
                         }
 
                         html += '<tr>' +
@@ -80,22 +74,19 @@
                             '<td>' + status + '</td>' +
                             '<td>' + location + '</td>' +
                         '</tr>';
-                    });
+                    }
                 }
-
                 document.getElementById('list').innerHTML = html;
                 document.getElementById('refresh-status').innerText = 'Last updated: ' + new Date().toLocaleTimeString() + ' — ' + data.length + ' logs total';
-
-            } catch (e) {
-                console.error(e);
-                document.getElementById('list').innerHTML = '<tr><td colspan="4" style="color:red;">❌ Error: ' + e.message + '</td></tr>';
+            })
+            .catch(function(e) {
+                document.getElementById('list').innerHTML = '<tr><td colspan="4" style="color:red;">Error: ' + e.message + '</td></tr>';
                 document.getElementById('refresh-status').innerText = 'Failed to load';
-            }
+            });
         }
 
         getData();
         setInterval(getData, 30000);
     </script>
-
 </body>
 </html>
