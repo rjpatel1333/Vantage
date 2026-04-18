@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vantage Logistics</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 20px; }
+        .btn { width: 100%; max-width: 300px; padding: 20px; margin: 10px 0; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+        .btn-start { background: #007bff; color: white; }
+        .btn-end { background: #28a745; color: white; }
+        input { width: 80%; max-width: 300px; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 1rem; }
+        #status { margin-top: 20px; padding: 15px; border-radius: 8px; background: #252525; }
+    </style>
+</head>
+<body>
+    <h2 style="color: #007bff;">Vantage Logistics</h2>
+    <input type="text" id="driverName" placeholder="Driver Name / ID">
+    <br>
+    <button class="btn btn-start" onclick="getLocation('Shift Started')">Start Shift</button>
+    <br>
+    <button class="btn btn-end" onclick="getLocation('Delivery Completed')">Delivery Done</button>
+    <div id="status">Ready</div>
+
+    <script>
+        async function getLocation(msg) {
+            const statusDiv = document.getElementById('status');
+            const driver = document.getElementById('driverName').value;
+            if (!driver) { statusDiv.innerText = "❌ Enter Driver Name"; return; }
+
+            statusDiv.innerText = "📍 Locating...";
+            const options = { enableHighAccuracy: true, timeout: 10000 };
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => sendData(driver, msg, pos.coords.latitude, pos.coords.longitude),
+                    (err) => sendData(driver, msg + " (Low Signal)", null, null),
+                    options
+                );
+            }
+        }
+
+        async function sendData(name, msg, lat, lon) {
+            const statusDiv = document.getElementById('status');
+            try {
+                const res = await fetch('https://dpfzcrbucmsdbvanhqyo.supabase.co/functions/v1/global-bake', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, status_message: msg, lat: lat, lon: lon })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    statusDiv.innerHTML = `<b style="color:#28a745">✅ Logged</b><br><small>${data.address || ''}</small>`;
+                }
+            } catch (e) { statusDiv.innerText = "⚠️ Error connecting to cloud."; }
+        }
+    </script>
+</body>
+</html>
