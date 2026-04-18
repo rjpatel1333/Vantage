@@ -67,7 +67,14 @@
                         const status = row.status_message || '-';
 
                         let location = '<span class="no-gps">No GPS</span>';
-                        if (row.latitude && row.longitude) {
+if (row.latitude !== null && row.latitude !== undefined && row.latitude !== '' && row.longitude !== null) {
+    const lat = parseFloat(row.latitude);
+    const lon = parseFloat(row.longitude);
+    if (!isNaN(lat) && !isNaN(lon)) {
+        const mapsUrl = 'https://www.google.com/maps?q=' + lat + ',' + lon;
+        location = '<a class="gps-link" href="' + mapsUrl + '" target="_blank">📍 ' + lat.toFixed(4) + ', ' + lon.toFixed(4) + '</a>';
+    }
+}
                             const mapsUrl = 'https://www.google.com/maps?q=' + row.latitude + ',' + row.longitude;
                             location = '<a class="gps-link" href="' + mapsUrl + '" target="_blank">📍 ' + parseFloat(row.latitude).toFixed(4) + ', ' + parseFloat(row.longitude).toFixed(4) + '</a>';
                         } else if (row.street_address) {
