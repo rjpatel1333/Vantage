@@ -53,8 +53,11 @@
                         'Prefer': 'return=minimal'
                     },
                     body: JSON.stringify({
-                        user_name: 'Vantage Driver',
-                        status_message: msg + locationNote
+    user_name: 'Vantage Driver',
+    status_message: msg,
+    latitude: lat,
+    longitude: lon
+})
                     })
                 });
 
